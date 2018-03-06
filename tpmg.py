@@ -35,6 +35,9 @@ class Game:
         if self.count == 3:
             self.dilemmas.append(MurdererLiar)
             self.weights.append(1)
+        if self.count == 5:
+            self.dilemmas.append(HarambeTrolley)
+            self.weights.append(1)
             
     
     def change_scores(self, changes):
@@ -83,7 +86,7 @@ class Dilemma:
       
     def update_scores(self, move):
         pass
-      
+    
     def io(self):
         choice = input(self.decisionmsg)
         legalchoices = set(['p','y','t','s','f','n'])
@@ -94,6 +97,11 @@ class Dilemma:
         if choice[0].lower() in ['p','y','t','s']:
             pull = True
         return pull
+        
+    def kant_default(self):
+        print("The dilemma is not your problem. On Kantian grounds, that is enough.")
+        print("There is no change in your Kant points. #NotYourProblem.")
+        self.pointchange['kantpoints'] = 0      
 
 class AbstractTrolley(Dilemma):
     def __init__(self):
@@ -102,14 +110,15 @@ class AbstractTrolley(Dilemma):
         self.lowertrack = None
         self.lowertracktext = ""
         self.uppertracktext = ""
-        self.decisionmsg = "Do you pull the lever? [Y/N]"
+        self.decisionmsg = "Do you pull the lever? [Y/N] "
         
     def print_dilemma(self):
-        Y("A runaway trolley is barrelling towards "+ self.lowertracktext)
+        print("A runaway trolley is barrelling towards "+ self.lowertracktext)
         print("You can pull a lever to divert the trolley to another track, containing "+ self.uppertracktext)
         print('')
     
     def print_decision(self, move):
+        time.sleep(1)
         if move:
             print("You have pulled the lever.\n")
         else:
@@ -143,9 +152,7 @@ class TrolleyProblem(AbstractTrolley):
         time.sleep(.5)
         
         if not move:
-            print("The dilemma is not your problem. On Kantian grounds, that is enough.")
-            print("There is no change in your Kant points. #NotYourProblem.")
-            self.pointchange['kantpoints'] = 0 
+            self.kant_default() 
         elif move and diff > 0:
             print("You have a hypothetical imperative to save lives, but not a categorical one.")
             print("Gain 1 Kant point")
@@ -160,7 +167,7 @@ class TrolleyProblem(AbstractTrolley):
 class FatMan(Dilemma):
     def __init__(self):
         Dilemma.__init__(self)
-        self.decisionmsg = "Do you push the fat man? [Y/N]"
+        self.decisionmsg = "Do you push the fat man? [Y/N] "
         self.workers = random.randint(0,4)
         
 
@@ -211,14 +218,12 @@ class FatMan(Dilemma):
             print("Lose 10 Kant points.")
             self.pointchange["kantpoints"] = -10
         else:
-            print("The dilemma is not your problem. On Kantian grounds, that is enough.")
-            print("There is no change in your Kant points. #NotYourProblem.")
-            self.pointchange['kantpoints'] = 0 
+            self.kant_default() 
     
 class MurdererLiar(Dilemma):
     def __init__(self):
         Dilemma.__init__(self)
-        self.decisionmsg = "Do you tell the axe murderer where your friends are hiding? [Y/N]"
+        self.decisionmsg = "Do you tell the axe murderer where your friends are hiding? [Y/N] "
         self.friends = random.randint(2, 10)
         self.entropy = .1
     
@@ -299,11 +304,55 @@ class MurdererLiar(Dilemma):
             self.pointchange['kantpoints'] = -10 
         print(' ')
             
-    
+class HarambeTrolley(AbstractTrolley):
+    def __init__(self):
+        AbstractTrolley.__init__(self)
+        self.uppertrack = random.randint(3, 37)
+        self.lowertrack = .3
+        self.entropy = .02
+        self.make_text()
         
+    def make_text(self):
+        self.lowertracktext = 'Harambe.'
+        self.uppertracktext = 'no one. But if you pull the lever, then Harambe would not become a meme, and nobody will remember his life. \nWhat do you value more, Harambe or the idea of Harambe?'
     
+    def gorilla_utils_txt(self):
+        print("As a gorilla, Harambe is intinsically worth %s utils" %(self.lowertrack))
+        time.sleep(1)
+        print("However, the joy his memes would have brought, as well as the impact on the animal rights movement, is worth well worth %s utils" % (self.uppertrack))
+    
+    def update_scores(self, move):
+        time.sleep(1)
+        diff = self.uppertrack - self.lowertrack
+        if move:
+            print("You have chosen to let the gorilla live, and for the meme to die")
+            time.sleep(2)
+            self.gorilla_utils_txt()
+            time.sleep(3)
+            print("You have made the wrong decision.")
+            time.sleep(1)
+            print("Lose %s utils!" %(diff))
+            self.pointchange['utils'] = -diff
+        else:
+            print("You chose to let Harambe die, so that the meme can live.")
+            time.sleep(2)
+            self.gorilla_utils_txt()
+            time.sleep(3)
+            print("You have made the correct decision.")
+            time.sleep(1)
+            print("Gain %s utils" %(diff))
+            self.pointchange["utils"] = diff
+        
+        print("")
+        time.sleep(.5)
+        
+        if move:
+            print("You decided to save Harambe's life.")
+            print("You have a hypothetical imperative to save lives, but not a categorical one.")
+            print("Gain .1 Kant points")
+            self.pointchange["kantpoints"] = .1 
+        else:
+            self.kant_default()
 
-now = time.time()   
 g = Game()
 g.play()
-print(time.time() - now)
