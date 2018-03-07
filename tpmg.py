@@ -45,6 +45,7 @@ class Game:
     def change_scores(self, changes):
         for key in changes:
             self.points[key] = self.points.get(key, 0) + changes[key]
+            self.points[key] = round(self.points.get(key, 0), 3)
     
     def print_results(self):
         self.print_count()
@@ -196,7 +197,7 @@ class FatMan(Dilemma):
         diff = self.workers - 1
         if move:
             if diff < 0:
-                print("You are MURDERER who have pushed a fat man for no apparent reason.")
+                print("You are a MURDERER who have pushed a fat man for no apparent reason.")
                 print("Lose 1 util")
             elif diff == 0:
                 print("You are a MURDERER who just killed an innocent man in cold blood. On the other hand, there was no net change in lives. So, whatever.")
@@ -204,6 +205,7 @@ class FatMan(Dilemma):
             else:
                 print("You have made the correct utilitarian choice, saving a net "+str(diff)+' lives.')
                 print("Gain %s utils" % (str(diff)))
+            self.pointchange['utils'] = diff
         else:
             if diff <= 0:
                 print("You have made the right utilitarian choice.")
@@ -211,7 +213,7 @@ class FatMan(Dilemma):
             else:
                 print("In not wanting to get your hands wet, you have killed a net %s lives" %(diff))
                 print ("Lose %s utils" %(diff))
-        self.pointchange['utils'] = diff
+            self.pointchange['utils'] = -diff
             
         print('')
         time.sleep(.5)
@@ -321,7 +323,7 @@ class HarambeTrolley(AbstractTrolley):
     def gorilla_utils_txt(self):
         print("As a gorilla, Harambe is intinsically worth %s utils" %(self.lowertrack))
         time.sleep(1)
-        print("However, the joy his memes would have brought, as well as the impact on the animal rights movement, is worth well worth %s utils" % (self.uppertrack))
+        print("However, the joy his memes would have brought, as well as the impact on the animal rights movement, is well worth %s utils" % (self.uppertrack))
     
     def update_scores(self, move):
         time.sleep(1)
@@ -432,7 +434,7 @@ class DrowningChild(Dilemma):
     def print_dilemma(self):
         print('You are casually walking home from a long day at work, wearing an expensive suit and shoes that cost $ %s dollars.' %(self.clothes))
         time.sleep(2)
-        print("As you come across a shallow pond, you notice splashing. Looking around, you see that %s children are drowning!" %(self.children))
+        print("As you come across a shallow pond, you hear splashing. Looking around, you see that %s children are drowning!" %(self.children))
         time.sleep(2)
         print("Nobody else is around. The pond is shallow so you're at no physical risk, but jumping in to save them will completely ruin your very expensive clothes.")
         print('')
@@ -462,8 +464,9 @@ class DrowningChild(Dilemma):
             print("While trying to save children from drowning is noble, it isn't when there aren't actually any children to save!")
             time.sleep(1)
             print("The money that it would take to replace your expensive clothes should have been spent on something else, like malarial bednets.")
-            print ('Lose %s utils!' % (self.clothes/4000.0))
-            self.pointchange['utils'] -= self.clothes/4000.0
+            loss = round(self.clothes/4000.0, 3)
+            print ('Lose %s utils!' % (loss))
+            self.pointchange['utils'] -= loss
         if not move and self.children == 0:
             print("You made the pragmatic utilitarian decision.")
             print('Gain 0 utils.')
