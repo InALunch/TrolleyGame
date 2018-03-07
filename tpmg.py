@@ -485,7 +485,7 @@ class DrowningChild(Dilemma):
         elif move:
             print("Prudence is nice, but it is not a categorical imperative.")
             print('Gain 0 Kant points')
-            self.pointchange['kantpoints'] = 1 
+            self.pointchange['kantpoints'] = 0 
         else:
             self.kant_default()
             
