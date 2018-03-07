@@ -35,10 +35,11 @@ class Game:
         if self.count == 3:
             self.dilemmas.append(MurdererLiar)
             self.weights.append(1)
+        dilemmas = [HarambeTrolley, BookTrolley, DrowningChild]
         if self.count == 5:
-            self.dilemmas.append(HarambeTrolley)
-            self.dilemmas.append(BookTrolley)
-            self.weights.extend([1, 1])
+            for dilemma in dilemmas:
+                self.dilemmas.append(dilemma)
+                self.weights.append(1)
             
     
     def change_scores(self, changes):
@@ -315,7 +316,7 @@ class HarambeTrolley(AbstractTrolley):
         
     def make_text(self):
         self.lowertracktext = 'Harambe, a gorilla.'
-        self.uppertracktext = 'no one. But if you pull the lever, then Harambe would not become a meme, and nobody will ever remember his life. \nWhat do you value more, Harambe or the idea of Harambe?'
+        self.uppertracktext = 'no one. But if you pull the lever, then Harambe would never become a meme, and nobody will ever remember his life. \nWhat do you value more, Harambe or the idea of Harambe?'
     
     def gorilla_utils_txt(self):
         print("As a gorilla, Harambe is intinsically worth %s utils" %(self.lowertrack))
@@ -326,7 +327,7 @@ class HarambeTrolley(AbstractTrolley):
         time.sleep(1)
         diff = self.uppertrack - self.lowertrack
         if move:
-            print("You have chosen to let the gorilla live, and for the meme to die")
+            print("You have chosen to let the gorilla live, and for the meme to die.")
             time.sleep(2)
             self.gorilla_utils_txt()
             time.sleep(3)
@@ -404,5 +405,102 @@ class BookTrolley(AbstractTrolley):
             print("Lose 1 Kant point.")
             self.pointchange['kantpoints'] = -1 
 
+class DrowningChild(Dilemma):
+    def __init__(self):
+        Dilemma.__init__(self)
+        self.decisionmsg = "Do you jump in to save the children? [Jump/Don't Jump] "
+        self.clothes = random.randint(500,2000)
+        self.children = random.randint(0,8)
+        self.entropy = .5
+        
+    def that_childs_name(self):
+        inventions = ['invent a perfect malaria vaccine', 'broker an international peace treaty', 'engineer an early-detection system for asteroids']
+        childnames = ['Albert Einstein', 'Peter Singer', 'John Stuart Mill']
+        invention = random.choice(inventions)
+        child = random.choice(childnames)
+        print('')
+        print("One of the children you rescued went on to do great things.")
+        print("He was so inspired by your sacrifice that he went on to %s, saving millions of lives." %(invention))
+        time.sleep(2)
+        print('')
+        print("That child's name? %s." %(child))
+        print('')
+        print('Unfortunately, consequentialist ethics should not take into account moral luck, and you are not any more morally praiseworthy for somebody who turned out to be great, if you could not have anticipated this beforehand.')
+        self.entropy = .2
+        time.sleep(4)
+        
+    def print_dilemma(self):
+        print('You are casually walking home from a long day at work, wearing an expensive suit and shoes that cost $ %s dollars.' %(self.clothes))
+        time.sleep(2)
+        print("As you come across a shallow pond, you notice splashing. Looking around, you see that %s children are drowning!" %(self.children))
+        time.sleep(2)
+        print("Nobody else is around. The pond is shallow so you're at no physical risk, but jumping in to save them will completely ruin your very expensive clothes.")
+        print('')
+        time.sleep(3)
+        
+    
+    def print_decision(self, move):
+        if move:
+            print("You jump in to rescue the children, pulling them out one by one.")
+            print("You rescue all of them!")
+            time.sleep(2)
+            print("You completely ruin your shoes in doing so, but you consider your sacrifice well worth it.")
+        else:
+            print(" 'It was a difficult job', you thought to yourself, 'but somebody had to do it.'")
+            print("As you walk away from the screaming, you idly wonder to yourself who that somebody might be.")
+        print(' ')
+        time.sleep(2)
+        
+    def update_scores(self, move):
+        if move and self.children >= 1:
+            print("You rushed in and saved %s children's lives, at great personal sacrifice." %(self.children))
+            if random.randint(1, 5) <= 1:
+                self.that_childs_name()
+            print("Gain %s utils!" %(self.children))
+            self.pointchange['utils'] = self.children
+        elif move and self.children == 0:
+            print("While trying to save children from drowning is noble, it isn't when there aren't actually any children to save!")
+            time.sleep(1)
+            print("The money that it would take to replace your expensive clothes should have been spent on something else, like malarial bednets.")
+            print ('Lose %s utils!' % (self.clothes/4000.0))
+            self.pointchange['utils'] -= self.clothes/4000.0
+        if not move and self.children == 0:
+            print("You made the pragmatic utilitarian decision.")
+            print('Gain 0 utils.')
+            self.pointchange['utils'] = 0 
+        elif not move:
+            print("You are a bystander, even though you could easily have saved the drowning children.")
+            time.sleep(2)
+            print("You are consequentially indistinguishable from a murderer.")
+            print("Lose %s utils!" %(self.children))
+            self.pointchange['utils'] = -self.children
+        
+        time.sleep(1)
+        print('')
+        
+        if move and self.children > 0:
+            print('Saving children is a noble cause, but it is superergoratory.')
+            print("Gain 1 Kant point.")
+            self.pointchange['kantpoints'] = 1 
+        elif move:
+            print("Prudence is nice, but it is not a categorical imperative.")
+            print('Gain 0 Kant points')
+            self.pointchange['kantpoints'] = 1 
+        else:
+            self.kant_default()
+            
+          
+    
+    def io(self):
+        choice = input(self.decisionmsg)
+        legalchoices = set(['j','y','t','s','f','n','d'])
+        while len(choice) == 0 or choice[0].lower() not in legalchoices:
+            print ("I didn't catch that...You HAVE to make a choice.")
+            choice = input(self.decisionmsg)
+        jump = False
+        if choice[0].lower() in ['j','y','t','s']:
+            jump = True
+        return jump
+        
 g = Game()
 g.play()
