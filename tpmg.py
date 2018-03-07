@@ -37,7 +37,8 @@ class Game:
             self.weights.append(1)
         if self.count == 5:
             self.dilemmas.append(HarambeTrolley)
-            self.weights.append(1)
+            self.dilemmas.append(BookTrolley)
+            self.weights.extend([1, 1])
             
     
     def change_scores(self, changes):
@@ -313,8 +314,8 @@ class HarambeTrolley(AbstractTrolley):
         self.make_text()
         
     def make_text(self):
-        self.lowertracktext = 'Harambe.'
-        self.uppertracktext = 'no one. But if you pull the lever, then Harambe would not become a meme, and nobody will remember his life. \nWhat do you value more, Harambe or the idea of Harambe?'
+        self.lowertracktext = 'Harambe, a gorilla.'
+        self.uppertracktext = 'no one. But if you pull the lever, then Harambe would not become a meme, and nobody will ever remember his life. \nWhat do you value more, Harambe or the idea of Harambe?'
     
     def gorilla_utils_txt(self):
         print("As a gorilla, Harambe is intinsically worth %s utils" %(self.lowertrack))
@@ -353,6 +354,55 @@ class HarambeTrolley(AbstractTrolley):
             self.pointchange["kantpoints"] = .1 
         else:
             self.kant_default()
+
+class BookTrolley(AbstractTrolley):
+    def __init__(self):
+        AbstractTrolley.__init__(self)
+        self.make_books()
+        self.entropy = .2
+        self.bookutils = random.randint(3,10)
+        
+    def make_books(self):
+        utilbooks = ["John Stuart Mill's 'Utilitarianism'", "An Introduction to the Principles of Morals and Legislation by Jeremy Bentham", "Animal Liberation by Peter Singer"]
+        deonbooks = ["Groundwork for the Metaphysics of Morals by Kant","A Critique of Practical Reason by Kant", "A Theory of Justice by John Rawls"]
+        utiltext = "the last surviving copy of " + random.choice(utilbooks) + ', a seminal text of utilitarianism.'
+        deontext = "the last surviving copy of " + random.choice(deonbooks) + ', a well-regarded text of deontology.'
+        self.utiltrack = random.randint(0,1) #0 is upper track, 1 is lower.
+        if self.utiltrack == 0:
+            self.uppertracktext = utiltext
+            self.lowertracktext = deontext
+        else:
+            self.uppertracktext = deontext
+            self.lowertracktext = utiltext
+        
+    def update_scores(self, move):
+        if (move and self.utiltrack == 0) or (not move and self.utiltrack):
+            print("You have allowed a great book of utilitarianism to be destroyed, for a mere deontological text!")
+            time.sleep(2)
+            print("Lose %s utils!" %(self.bookutils))
+            self.pointchange['utils'] = -self.bookutils
+        else:
+            print("You have successfully identified the consequentially correct book to save.")
+            print("You are a moral hero.")
+            time.sleep(2)
+            print("Gain %s utils!" %(self.bookutils))
+            self.pointchange['utils'] = self.bookutils
+        print("")
+        time.sleep(2)
+        if not move:
+            self.kant_default()
+        elif move and self.utiltrack == 0:
+            print("You have successfully saved a deontological text.")
+            print("However, spreading deontology is a hypothetical imperative, not a categorical one.")
+            time.sleep(2.5)
+            print("Gain 1 Kant point.")
+            self.pointchange['kantpoints'] = 1 
+        else:
+            print("You have destroyed a great deontological text!")
+            print("However, spreading deontology is a hypothetical imperative, not a categorical one.")
+            time.sleep(2.5)
+            print("Lose 1 Kant point.")
+            self.pointchange['kantpoints'] = -1 
 
 g = Game()
 g.play()
