@@ -321,7 +321,7 @@ class HarambeTrolley(AbstractTrolley):
         self.uppertracktext = 'no one. But if you pull the lever, then Harambe would never become a meme, and nobody will ever remember his life. \nWhat do you value more, Harambe or the idea of Harambe?'
     
     def gorilla_utils_txt(self):
-        print("As a gorilla, Harambe is intinsically worth %s utils" %(self.lowertrack))
+        print("As a gorilla, Harambe is intrinsically worth %s utils" %(self.lowertrack))
         time.sleep(1)
         print("However, the joy his memes would have brought, as well as the impact on the animal rights movement, is well worth %s utils" % (self.uppertrack))
     
