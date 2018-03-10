@@ -4,7 +4,7 @@ import time
 class Game:
     def __init__(self):
         self.points = {'kantpoints' : 0, 'utils' : 0}
-        self.dilemmas = [TrolleyProblem]
+        self.dilemmas = [RTrolleyProblem]
         self.count = 0
         self.weights = [1]
       
@@ -60,7 +60,7 @@ class Game:
     
     def quit(self):
         print(' ')
-        keep = input("Do you want to keep playing? [Y/N] ")
+        keep = input("Do you want to keep playing? [Yes/No] ")
         if len(keep) == 0 or keep[0].lower() in ["y", "c", "t"]:
             print("Alright, let's keep going.")
         else:
@@ -92,12 +92,12 @@ class Dilemma:
     
     def io(self):
         choice = input(self.decisionmsg)
-        legalchoices = set(['p','y','t','s','f','n'])
+        legalchoices = set(['p','y','t','f','n'])
         while len(choice) == 0 or choice[0].lower() not in legalchoices:
             print ("I didn't catch that...You HAVE to make a choice.")
             choice = input(self.decisionmsg)
         pull = False
-        if choice[0].lower() in ['p','y','t','s']:
+        if choice[0].lower() in ['p','y','t']:
             pull = True
         return pull
         
@@ -113,7 +113,7 @@ class AbstractTrolley(Dilemma):
         self.lowertrack = None
         self.lowertracktext = ""
         self.uppertracktext = ""
-        self.decisionmsg = "Do you pull the lever? [Y/N] "
+        self.decisionmsg = "Do you pull the lever? [Yes/No] "
         
     def print_dilemma(self):
         print("A runaway trolley is barrelling towards "+ self.lowertracktext)
@@ -128,7 +128,7 @@ class AbstractTrolley(Dilemma):
             print("You let the lever be.\n")
 
 
-class TrolleyProblem(AbstractTrolley):
+class RTrolleyProblem(AbstractTrolley):
     def __init__(self):
         AbstractTrolley.__init__(self)
         self.uppertrack = random.randint(0,5)
@@ -138,39 +138,68 @@ class TrolleyProblem(AbstractTrolley):
     def make_text(self):
         self.lowertracktext = str(self.lowertrack) + ' workers who are mysteriously tied up. '
         self.uppertracktext = str(self.uppertrack) + ' workers who are also tied up. '
+
+    def print_decision(self, move):
+        time.sleep(1)
+        if move == 1:
+            print("You have pulled the lever.\n")
+        elif move == -1:
+            print("You time the lever at *just* the right moment, jiggling it and setting up the trolley to mtd.")
+        else:
+            print("You let the lever be.\n")
     
     def update_scores(self, move):
         diff = self.lowertrack - self.uppertrack
-        if self.uppertrack == self.lowertrack:
-            print("Your choice is neutral on utilitarian grounds")
-            self.pointchange['utils'] = 0
-        elif (diff < 0 and move )or (diff > 0 and not move):
+        if move == -1 and self.uppertrack > 0:
+            print("You made the worst possible utilitarian choice.")
+            print("You are a moral monster. Lost %s utils" %(self.lowertrack + self.uppertrack))
+            self.pointchange['utils'] = -(self.lowertrack + self.uppertrack)
+        elif (diff < 0 and move == 1) or (diff > 0 and move == 0) or move == -1:
             print ("You have made the wrong utilitarian decision. Lose "+ str(abs(diff)) + ' utils!')
             self.pointchange['utils'] = - abs(diff)
+        elif self.uppertrack == self.lowertrack:
+            print("Your choice is neutral on utilitarian grounds")
+            self.pointchange['utils'] = 0
         elif (diff > 0 and move) or (diff < 0 and not move):
-            print("You have made the correct utilitarian decision and saved "+ str(abs(diff)) + " lives.")
+            print("You have made the correct utilitarian decision and saved a net "+ str(abs(diff)) + " lives.")
             print("Gain "+ str(abs(diff))+ ' utils!')
             self.pointchange['utils'] = abs(diff)
         print('')
         time.sleep(.5)
         
-        if not move:
+        if move == 0:
             self.kant_default() 
-        elif move and diff > 0:
+        elif move == 1 and diff > 0:
             print("You have a hypothetical imperative to save lives, but not a categorical one.")
             print("Gain 1 Kant point")
             self.pointchange["kantpoints"] = 1
         else:
-            print("You are a MURDERER who have violated the categorical imperative!")
+            print("You are a MURDERER who has violated the categorical imperative!")
             print("Lose 10 Kant points.")
             self.pointchange["kantpoints"] = -10
         
         time.sleep(.5)
+        
+    def io(self):
+        choice = input(self.decisionmsg)
+        legalchoices = set(['p','y','t','f','n'])
+        
+        while len(choice) == 0 or choice[0].lower() not in legalchoices:
+            if choice[0:5].lower() == 'multi' or choice[0:3] == 'mtd':
+                break
+            print ("I didn't catch that...You HAVE to make a choice.")
+            choice = input(self.decisionmsg)
+        pull = 0
+        if choice[0].lower() in ['p','y','t']:
+            pull = 1
+        elif choice[0].lower() == 'm':
+            pull = -1
+        return pull
             
 class FatMan(Dilemma):
     def __init__(self):
         Dilemma.__init__(self)
-        self.decisionmsg = "Do you push the fat man? [Y/N] "
+        self.decisionmsg = "Do you push the fat man? [Yes/No] "
         self.workers = random.randint(0,4)
         
 
@@ -197,7 +226,7 @@ class FatMan(Dilemma):
         diff = self.workers - 1
         if move:
             if diff < 0:
-                print("You are a MURDERER who have pushed a fat man for no apparent reason.")
+                print("You are a MURDERER who just pushed a fat man for no apparent reason.")
                 print("Lose 1 util")
             elif diff == 0:
                 print("You are a MURDERER who just killed an innocent man in cold blood. On the other hand, there was no net change in lives. So, whatever.")
@@ -218,7 +247,7 @@ class FatMan(Dilemma):
         print('')
         time.sleep(.5)
         if move:
-            print("You are a MURDERER who have violated the categorical imperative!")
+            print("You are a MURDERER who has violated the categorical imperative!")
             print("Lose 10 Kant points.")
             self.pointchange["kantpoints"] = -10
         else:
@@ -227,7 +256,7 @@ class FatMan(Dilemma):
 class MurdererLiar(Dilemma):
     def __init__(self):
         Dilemma.__init__(self)
-        self.decisionmsg = "Do you tell the axe murderer where your friends are hiding? [Y/N] "
+        self.decisionmsg = "Do you tell the axe murderer where your friends are hiding? [Yes/No] "
         self.friends = random.randint(2, 10)
         self.entropy = .1
     
@@ -410,10 +439,14 @@ class BookTrolley(AbstractTrolley):
 class DrowningChild(Dilemma):
     def __init__(self):
         Dilemma.__init__(self)
-        self.decisionmsg = "Do you jump in to save the children? [Jump/Don't Jump] "
+        self.decisionmsg = "Do you jump in to save the children? [Yes/No] "
         self.clothes = random.randint(500,2000)
         self.children = random.randint(0,8)
+        self.special = False
         self.entropy = .5
+        if random.randint(1, 5) == 1:
+            self.special = True 
+            self.entropy = .1
         
     def that_childs_name(self):
         inventions = ['invent a perfect malaria vaccine', 'broker an international peace treaty', 'engineer an early-detection system for asteroids']
@@ -456,7 +489,7 @@ class DrowningChild(Dilemma):
     def update_scores(self, move):
         if move and self.children >= 1:
             print("You rushed in and saved %s children's lives, at great personal sacrifice." %(self.children))
-            if random.randint(1, 5) <= 1:
+            if self.special:
                 self.that_childs_name()
             print("Gain %s utils!" %(self.children))
             self.pointchange['utils'] = self.children
@@ -496,12 +529,12 @@ class DrowningChild(Dilemma):
     
     def io(self):
         choice = input(self.decisionmsg)
-        legalchoices = set(['j','y','t','s','f','n','d'])
+        legalchoices = set(['j','y','t','f','n','d'])
         while len(choice) == 0 or choice[0].lower() not in legalchoices:
             print ("I didn't catch that...You HAVE to make a choice.")
             choice = input(self.decisionmsg)
         jump = False
-        if choice[0].lower() in ['j','y','t','s']:
+        if choice[0].lower() in ['j','y','t']:
             jump = True
         return jump
         
