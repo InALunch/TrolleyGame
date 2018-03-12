@@ -60,11 +60,12 @@ class Game:
     
     def quit(self):
         print(' ')
-        keep = input("Do you want to keep playing? [Yes/No] ")
+        keep = input("Do you want to keep playing? [Yes/No] ").strip()
         if len(keep) == 0 or keep[0].lower() in ["y", "c", "t"]:
             print("Alright, let's keep going.")
         else:
             print("Life is a series of trolley problems. You cannot avoid them.")
+            time.sleep(2)
         print(' ')
           
 class Dilemma:
@@ -90,12 +91,12 @@ class Dilemma:
     def update_scores(self, move):
         pass
     
-    def io(self):
-        choice = input(self.decisionmsg)
-        legalchoices = set(['p','y','t','f','n'])
+    def io(self, mtd = False):
+        choice = input(self.decisionmsg).strip()
+        legalchoices = set(['p','y','t','f','n', 'd'])
         while len(choice) == 0 or choice[0].lower() not in legalchoices:
             print ("I didn't catch that...You HAVE to make a choice.")
-            choice = input(self.decisionmsg)
+            choice = input(self.decisionmsg).strip()
         pull = False
         if choice[0].lower() in ['p','y','t']:
             pull = True
@@ -136,8 +137,14 @@ class RTrolleyProblem(AbstractTrolley):
         self.make_text()
     
     def make_text(self):
-        self.lowertracktext = str(self.lowertrack) + ' workers who are mysteriously tied up. '
-        self.uppertracktext = str(self.uppertrack) + ' workers who are also tied up. '
+        if self.lowertrack == 1:
+            self.lowertracktext = 'one worker who is mysteriously tied up. '
+        else:
+            self.lowertracktext = str(self.lowertrack) + ' workers who are mysteriously tied up. '
+        if self.uppertrack == 1:
+            self.uppertracktext = 'one worker who is also tied up.'
+        else:
+            self.uppertracktext = str(self.uppertrack) + ' workers who are also tied up. '
 
     def print_decision(self, move):
         time.sleep(1)
@@ -181,14 +188,14 @@ class RTrolleyProblem(AbstractTrolley):
         time.sleep(.5)
         
     def io(self):
-        choice = input(self.decisionmsg)
-        legalchoices = set(['p','y','t','f','n'])
+        choice = input(self.decisionmsg).strip()
+        legalchoices = set(['p','y','t','f','n','d'])
         
         while len(choice) == 0 or choice[0].lower() not in legalchoices:
             if choice[0:5].lower() == 'multi' or choice[0:3] == 'mtd':
                 break
             print ("I didn't catch that...You HAVE to make a choice.")
-            choice = input(self.decisionmsg)
+            choice = input(self.decisionmsg).strip()
         pull = 0
         if choice[0].lower() in ['p','y','t']:
             pull = 1
@@ -340,7 +347,7 @@ class MurdererLiar(Dilemma):
 class HarambeTrolley(AbstractTrolley):
     def __init__(self):
         AbstractTrolley.__init__(self)
-        self.uppertrack = random.randint(3, 37)
+        self.uppertrack = random.randint(3, 20)
         self.lowertrack = .3
         self.entropy = .02
         self.make_text()
@@ -487,17 +494,17 @@ class DrowningChild(Dilemma):
         time.sleep(2)
         
     def update_scores(self, move):
+        loss = round(self.clothes/4000.0, 3)
         if move and self.children >= 1:
             print("You rushed in and saved %s children's lives, at great personal sacrifice." %(self.children))
             if self.special:
                 self.that_childs_name()
-            print("Gain %s utils!" %(self.children))
+            print("Gain %s utils!" %(self.children - loss))
             self.pointchange['utils'] = self.children
         elif move and self.children == 0:
             print("While trying to save children from drowning is noble, it isn't when there aren't actually any children to save!")
             time.sleep(1)
             print("The money that it would take to replace your expensive clothes should have been spent on something else, like malarial bednets.")
-            loss = round(self.clothes/4000.0, 3)
             print ('Lose %s utils!' % (loss))
             self.pointchange['utils'] -= loss
         if not move and self.children == 0:
@@ -510,7 +517,6 @@ class DrowningChild(Dilemma):
             print("You are consequentially indistinguishable from a murderer.")
             print("Lose %s utils!" %(self.children))
             self.pointchange['utils'] = -self.children
-        
         time.sleep(1)
         print('')
         
@@ -525,14 +531,12 @@ class DrowningChild(Dilemma):
         else:
             self.kant_default()
             
-          
-    
     def io(self):
-        choice = input(self.decisionmsg)
+        choice = input(self.decisionmsg).strip()
         legalchoices = set(['j','y','t','f','n','d'])
         while len(choice) == 0 or choice[0].lower() not in legalchoices:
             print ("I didn't catch that...You HAVE to make a choice.")
-            choice = input(self.decisionmsg)
+            choice = input(self.decisionmsg).strip()
         jump = False
         if choice[0].lower() in ['j','y','t']:
             jump = True
