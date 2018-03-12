@@ -14,18 +14,18 @@ class Game:
         d.play()
         self.change_scores(d.pointchange)
         time.sleep(2)
-        self.print_count()
-        self.print_score()
+        self.print_results()
         self.update_dilemmas()
         self.quit()
         time.sleep(1)
         self.play()
     
     def create_dilemma(self):
-        gamenum = random.choices(range(len(self.dilemmas)), weights = self.weights)[0]
-        gametype = self.dilemmas[gamenum]
+        (index, gametype), = random.choices(enumerate(self.dilemmas), weights = self.weights)
+        
         dilem = gametype()
-        self.weights[gamenum] *= dilem.entropy
+        self.weights[index] *= dilem.entropy
+        
         return dilem
 
     def update_dilemmas(self):
@@ -37,9 +37,8 @@ class Game:
             self.weights.append(1)
         dilemmas = [HarambeTrolley, BookTrolley, DrowningChild]
         if self.count == 5:
-            for dilemma in dilemmas:
-                self.dilemmas.append(dilemma)
-                self.weights.append(1)
+            self.dilemmas.extend(dilemmas)
+            self.weights.extend([1] * len(dilemmas))
             
     
     def change_scores(self, changes):
@@ -51,16 +50,16 @@ class Game:
         self.print_score()
         
     def print_count(self):
-        print("\nYou have encountered " + str(self.count) + ' ethical dilemmas.')
+        print("\nYou have encountered {} ethical dilemmas.".format(self.count))
         
     def print_score(self):
         for key in self.points:
-            print(' '.join(["You have "+ str(self.points[key]), key]))
+            print("You have {} {}".format(self.points[key], key))
     
     def quit(self):
         print(' ')
         keep = input("Do you want to keep playing? [Y/N] ")
-        if len(keep) == 0 or keep[0].lower() in ["y", "c", "t"]:
+        if keep[:1].lower() in ["", "y", "c", "t"]:
             print("Alright, let's keep going.")
         else:
             print("Life is a series of trolley problems. You cannot avoid them.")
@@ -91,14 +90,12 @@ class Dilemma:
     
     def io(self):
         choice = input(self.decisionmsg)
-        legalchoices = set(['p','y','t','s','f','n'])
-        while len(choice) == 0 or choice[0].lower() not in legalchoices:
+        legalchoices = set(['p','y','t','s','f','n', ''])
+        while choice[:1].lower() not in legalchoices:
             print ("I didn't catch that...You HAVE to make a choice.")
             choice = input(self.decisionmsg)
-        pull = False
-        if choice[0].lower() in ['p','y','t','s']:
-            pull = True
-        return pull
+
+        return choice[0].lower() in 'pyts'
         
     def kant_default(self):
         print("The dilemma is not your problem. On Kantian grounds, that is enough.")
@@ -107,7 +104,7 @@ class Dilemma:
 
 class AbstractTrolley(Dilemma):
     def __init__(self):
-        Dilemma.__init__(self)
+        super().__init__()
         self.uppertrack = None
         self.lowertrack = None
         self.lowertracktext = ""
@@ -129,27 +126,29 @@ class AbstractTrolley(Dilemma):
 
 class TrolleyProblem(AbstractTrolley):
     def __init__(self):
-        AbstractTrolley.__init__(self)
+        super().__init__()
         self.uppertrack = random.randint(0,5)
         self.lowertrack = random.randint(1,10)
         self.make_text()
     
     def make_text(self):
-        self.lowertracktext = str(self.lowertrack) + ' workers who are mysteriously tied up. '
-        self.uppertracktext = str(self.uppertrack) + ' workers who are also tied up. '
+        self.lowertracktext = '{} workers who are mysteriously tied up. '.format(self.lowertrack)
+        self.uppertracktext = '{} workers who are also tied up. '.format(self.uppertrack)
     
     def update_scores(self, move):
         diff = self.lowertrack - self.uppertrack
         if self.uppertrack == self.lowertrack:
             print("Your choice is neutral on utilitarian grounds")
-            self.pointchange['utils'] = 0
-        elif (diff < 0 and move )or (diff > 0 and not move):
-            print ("You have made the wrong utilitarian decision. Lose "+ str(abs(diff)) + ' utils!')
-            self.pointchange['utils'] = - abs(diff)
+            
+        elif (diff < 0 and move ) or (diff > 0 and not move):
+            print ("You have made the wrong utilitarian decision. Lose {} utils!".format(abs(diff)))
+            
         elif (diff > 0 and move) or (diff < 0 and not move):
-            print("You have made the correct utilitarian decision and saved "+ str(abs(diff)) + " lives.")
-            print("Gain "+ str(abs(diff))+ ' utils!')
-            self.pointchange['utils'] = abs(diff)
+            print("You have made the correct utilitarian decision and saved {} lives.".format(abs(diff)))
+            print("Gain {} utils!".format(abs(diff)))
+            
+        self.pointchange['utils'] = diff * (2*move - 1)
+        
         print('')
         time.sleep(.5)
         
@@ -168,7 +167,7 @@ class TrolleyProblem(AbstractTrolley):
             
 class FatMan(Dilemma):
     def __init__(self):
-        Dilemma.__init__(self)
+        super().__init__()
         self.decisionmsg = "Do you push the fat man? [Y/N] "
         self.workers = random.randint(0,4)
         
@@ -176,7 +175,7 @@ class FatMan(Dilemma):
     def print_dilemma(self):
         print("You are standing on top of a bridge.")
         if self.workers > 0:
-            print("You see a runaway trolley heading towards " + str(self.workers) + ' very skinny railway workers.')
+            print("You see a runaway trolley heading towards {} very skinny railway workers.".format(self.workers))
             print("It is very loud and they will not be able to hear you shouting for them to get off the tracks.\n")
         else:
             print("Below, you see a trolley going down the tracks.")
@@ -202,15 +201,15 @@ class FatMan(Dilemma):
                 print("You are a MURDERER who just killed an innocent man in cold blood. On the other hand, there was no net change in lives. So, whatever.")
                 print("Lose 0 utils")
             else:
-                print("You have made the correct utilitarian choice, saving a net "+str(diff)+' lives.')
-                print("Gain %s utils" % (str(diff)))
+                print("You have made the correct utilitarian choice, saving a net {} lives.".format(diff))
+                print("Gain {} utils".format(diff))
         else:
             if diff <= 0:
                 print("You have made the right utilitarian choice.")
-                print("Gain %s utils" % (-diff))
+                print("Gain {} utils".format(-diff))
             else:
-                print("In not wanting to get your hands wet, you have killed a net %s lives" %(diff))
-                print ("Lose %s utils" %(diff))
+                print("In not wanting to get your hands wet, you have killed a net {} lives".format(diff))
+                print ("Lose {} utils".format(diff))
         self.pointchange['utils'] = diff
             
         print('')
@@ -224,7 +223,7 @@ class FatMan(Dilemma):
     
 class MurdererLiar(Dilemma):
     def __init__(self):
-        Dilemma.__init__(self)
+        super().__init__()
         self.decisionmsg = "Do you tell the axe murderer where your friends are hiding? [Y/N] "
         self.friends = random.randint(2, 10)
         self.entropy = .1
@@ -236,7 +235,7 @@ class MurdererLiar(Dilemma):
         time.sleep(2)
         print ("Fortunately, you live in a house with very secure walls.")
         time.sleep(2)
-        print("During an extremely bad weekend, %s of your friends are especially worried, and you offer to hide them in your basement." % (self.friends))
+        print("During an extremely bad weekend, {} of your friends are especially worried, and you offer to hide them in your basement.".format(self.friends))
         time.sleep(3.5)
         print('')
         print("Your doorbell rang. Thinking that it might be another of your friends, you open the door, only to be greeted by a well-dressed man of large stature.")
@@ -255,23 +254,23 @@ class MurdererLiar(Dilemma):
             print("You tell the murderer where your friends are.")
             print("He politely thanks you, and charges down to your basement.")
             time.sleep(3)
-            print(' ')
+            print(" ")
             print("You hear some thuds, and lots of screaming.")
             print("The murderer runs back upstairs, thanks you, and heads off on his merry way.")
             time.sleep(2)
-            print('')
-            print("%s of your friends are dead!" % (self.friends))
+            print("")
+            print("{} of your friends are dead!".format(self.friends))
             print("")
             print("You feel bad about your friends dying, but glad that you did not lie.")
-            print('')
+            print("")
         else:
             print("You lie through your teeth, and tell the murderer that you haven't seen those people in months.")
             print("")
             print("He politely thanks you and leaves.")
-            print('')
+            print("")
             time.sleep(2)
             print("You feel bad about lying, but glad that your friends didn't die.")
-            print('')
+            print("")
       
     def update_scores(self, move):
         if move:
@@ -279,15 +278,15 @@ class MurdererLiar(Dilemma):
             time.sleep(1)
             print("You are consequentially indistinguishable from a murderer.")
             time.sleep(1)
-            print("Lose %s utils" % (self.friends))
+            print("Lose {} utils".format(self.friends))
             self.pointchange['utils'] = -self.friends
         else:
             print("By mere prevarication, you prevented several of your friends from dying. You should feel really good about yourself!")
             time.sleep(2)
-            print ("Gain %s utils" % (self.friends))
+            print ("Gain {} utils".format(self.friends))
             self.pointchange['utils'] = self.friends
         time.sleep(1)
-        print('')
+        print("")
         if move:
             print("Saving lives is a hypothetical imperative, while avoiding lying is a categorical imperative.")
             time.sleep(1)
@@ -308,7 +307,7 @@ class MurdererLiar(Dilemma):
             
 class HarambeTrolley(AbstractTrolley):
     def __init__(self):
-        AbstractTrolley.__init__(self)
+        super().__init__()
         self.uppertrack = random.randint(3, 37)
         self.lowertrack = .3
         self.entropy = .02
@@ -319,9 +318,9 @@ class HarambeTrolley(AbstractTrolley):
         self.uppertracktext = 'no one. But if you pull the lever, then Harambe would never become a meme, and nobody will ever remember his life. \nWhat do you value more, Harambe or the idea of Harambe?'
     
     def gorilla_utils_txt(self):
-        print("As a gorilla, Harambe is intinsically worth %s utils" %(self.lowertrack))
+        print("As a gorilla, Harambe is intinsically worth {} utils".format(self.lowertrack))
         time.sleep(1)
-        print("However, the joy his memes would have brought, as well as the impact on the animal rights movement, is worth well worth %s utils" % (self.uppertrack))
+        print("However, the joy his memes would have brought, as well as the impact on the animal rights movement, is worth well worth {} utils".format(self.uppertrack))
     
     def update_scores(self, move):
         time.sleep(1)
@@ -333,7 +332,7 @@ class HarambeTrolley(AbstractTrolley):
             time.sleep(3)
             print("You have made the wrong decision.")
             time.sleep(1)
-            print("Lose %s utils!" %(diff))
+            print("Lose {} utils!".format(diff))
             self.pointchange['utils'] = -diff
         else:
             print("You chose to let Harambe die, so that the meme can live.")
@@ -342,7 +341,7 @@ class HarambeTrolley(AbstractTrolley):
             time.sleep(3)
             print("You have made the correct decision.")
             time.sleep(1)
-            print("Gain %s utils" %(diff))
+            print("Gain {} utils".format(diff))
             self.pointchange["utils"] = diff
         
         print("")
@@ -358,7 +357,7 @@ class HarambeTrolley(AbstractTrolley):
 
 class BookTrolley(AbstractTrolley):
     def __init__(self):
-        AbstractTrolley.__init__(self)
+        super().__init__()
         self.make_books()
         self.entropy = .2
         self.bookutils = random.randint(3,10)
@@ -366,10 +365,10 @@ class BookTrolley(AbstractTrolley):
     def make_books(self):
         utilbooks = ["John Stuart Mill's 'Utilitarianism'", "An Introduction to the Principles of Morals and Legislation by Jeremy Bentham", "Animal Liberation by Peter Singer"]
         deonbooks = ["Groundwork for the Metaphysics of Morals by Kant","A Critique of Practical Reason by Kant", "A Theory of Justice by John Rawls"]
-        utiltext = "the last surviving copy of " + random.choice(utilbooks) + ', a seminal text of utilitarianism.'
-        deontext = "the last surviving copy of " + random.choice(deonbooks) + ', a well-regarded text of deontology.'
-        self.utiltrack = random.randint(0,1) #0 is upper track, 1 is lower.
-        if self.utiltrack == 0:
+        utiltext = "the last surviving copy of {}, a seminal text of utilitarianism.".format(random.choice(utilbooks))
+        deontext = "the last surviving copy of {}, a well-regarded text of deontology.".format(random.choice(deonbooks))
+        self.utiltrack = random.choice(['upper', 'lower'])
+        if self.utiltrack == 'upper':
             self.uppertracktext = utiltext
             self.lowertracktext = deontext
         else:
@@ -380,14 +379,14 @@ class BookTrolley(AbstractTrolley):
         if (move and self.utiltrack == 0) or (not move and self.utiltrack):
             print("You have allowed a great book of utilitarianism to be destroyed, for a mere deontological text!")
             time.sleep(2)
-            print("Lose %s utils!" %(self.bookutils))
-            self.pointchange['utils'] = -self.bookutils
+            print("Lose {} utils!".format(self.bookutils))
         else:
             print("You have successfully identified the consequentially correct book to save.")
             print("You are a moral hero.")
             time.sleep(2)
-            print("Gain %s utils!" %(self.bookutils))
-            self.pointchange['utils'] = self.bookutils
+            print("Gain {} utils!".format(self.bookutils))
+        self.pointchange['utils'] = self.bookutils
+            
         print("")
         time.sleep(2)
         if not move:
@@ -407,7 +406,7 @@ class BookTrolley(AbstractTrolley):
 
 class DrowningChild(Dilemma):
     def __init__(self):
-        Dilemma.__init__(self)
+        super().__init__()
         self.decisionmsg = "Do you jump in to save the children? [Jump/Don't Jump] "
         self.clothes = random.randint(500,2000)
         self.children = random.randint(0,8)
@@ -420,10 +419,10 @@ class DrowningChild(Dilemma):
         child = random.choice(childnames)
         print('')
         print("One of the children you rescued went on to do great things.")
-        print("He was so inspired by your sacrifice that he went on to %s, saving millions of lives." %(invention))
+        print("He was so inspired by your sacrifice that he went on to {}, saving millions of lives.".format(invention))
         time.sleep(2)
         print('')
-        print("That child's name? %s." %(child))
+        print("That child's name? {}.".format(child))
         print('')
         print('Unfortunately, consequentialist ethics should not take into account moral luck, and you are not any more morally praiseworthy for somebody who turned out to be great, if you could not have anticipated this beforehand.')
         self.entropy = .2
@@ -453,16 +452,16 @@ class DrowningChild(Dilemma):
         
     def update_scores(self, move):
         if move and self.children >= 1:
-            print("You rushed in and saved %s children's lives, at great personal sacrifice." %(self.children))
+            print("You rushed in and saved {} children's lives, at great personal sacrifice.".format(self.children))
             if random.randint(1, 5) <= 1:
                 self.that_childs_name()
-            print("Gain %s utils!" %(self.children))
+            print("Gain {} utils!".format(self.children))
             self.pointchange['utils'] = self.children
         elif move and self.children == 0:
             print("While trying to save children from drowning is noble, it isn't when there aren't actually any children to save!")
             time.sleep(1)
             print("The money that it would take to replace your expensive clothes should have been spent on something else, like malarial bednets.")
-            print ('Lose %s utils!' % (self.clothes/4000.0))
+            print ('Lose {} utils!'.format(self.clothes/4000.0))
             self.pointchange['utils'] -= self.clothes/4000.0
         if not move and self.children == 0:
             print("You made the pragmatic utilitarian decision.")
@@ -472,7 +471,7 @@ class DrowningChild(Dilemma):
             print("You are a bystander, even though you could easily have saved the drowning children.")
             time.sleep(2)
             print("You are consequentially indistinguishable from a murderer.")
-            print("Lose %s utils!" %(self.children))
+            print("Lose {} utils!".format(self.children))
             self.pointchange['utils'] = -self.children
         
         time.sleep(1)
@@ -493,14 +492,13 @@ class DrowningChild(Dilemma):
     
     def io(self):
         choice = input(self.decisionmsg)
-        legalchoices = set(['j','y','t','s','f','n','d'])
-        while len(choice) == 0 or choice[0].lower() not in legalchoices:
+        legalchoices = set(['j','y','t','s','f','n','d',''])
+        while choice[:1].lower() not in legalchoices:
             print ("I didn't catch that...You HAVE to make a choice.")
             choice = input(self.decisionmsg)
-        jump = False
-        if choice[0].lower() in ['j','y','t','s']:
-            jump = True
-        return jump
+            
+        return choice[0].lower() in 'jyts'
         
-g = Game()
-g.play()
+if __name__ == '__main__':
+    g = Game()
+    g.play()
