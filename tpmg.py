@@ -135,8 +135,8 @@ class TrolleyProblem(AbstractTrolley):
         self.make_text()
     
     def make_text(self):
-        self.lowertracktext = str(self.lowertrack) + ' workers who are mysteriously tied up. '
-        self.uppertracktext = str(self.uppertrack) + ' workers who are also tied up. '
+        self.lowertracktext = str(self.lowertrack) + (' workers who are ' if self.lowertrack != 1 else ' worker who is ') + 'mysteriously tied up. ' 
+        self.uppertracktext = str(self.uppertrack) + (' workers who are ' if self.lowertrack != 1 else ' worker who is ') + 'also tied up. '
     
     def update_scores(self, move):
         diff = self.lowertrack - self.uppertrack
@@ -176,7 +176,7 @@ class FatMan(Dilemma):
     def print_dilemma(self):
         print("You are standing on top of a bridge.")
         if self.workers > 0:
-            print("You see a runaway trolley heading towards " + str(self.workers) + ' very skinny railway workers.')
+            print("You see a runaway trolley heading towards " + str(self.workers) + ' very skinny railway ' + ('workers ' if self.workers != 1 else 'worker '))
             print("It is very loud and they will not be able to hear you shouting for them to get off the tracks.\n")
         else:
             print("Below, you see a trolley going down the tracks.")
@@ -408,10 +408,10 @@ class BookTrolley(AbstractTrolley):
 class DrowningChild(Dilemma):
     def __init__(self):
         Dilemma.__init__(self)
-        self.decisionmsg = "Do you jump in to save the children? [Jump/Don't Jump] "
         self.clothes = random.randint(500,2000)
         self.children = random.randint(0,8)
         self.entropy = .5
+        self.decisionmsg = "Do you jump in to save the" + (" children" if self.children != 1 else " child")+ "? [Jump/Don't Jump] "
         
     def that_childs_name(self):
         inventions = ['invent a perfect malaria vaccine', 'broker an international peace treaty', 'engineer an early-detection system for asteroids']
@@ -419,7 +419,7 @@ class DrowningChild(Dilemma):
         invention = random.choice(inventions)
         child = random.choice(childnames)
         print('')
-        print("One of the children you rescued went on to do great things.")
+        print(("One of the children " if self.children != 1 else "The child ")+ "you rescued went on to do great things.")
         print("He was so inspired by your sacrifice that he went on to %s, saving millions of lives." %(invention))
         time.sleep(2)
         print('')
@@ -432,16 +432,16 @@ class DrowningChild(Dilemma):
     def print_dilemma(self):
         print('You are casually walking home from a long day at work, wearing an expensive suit and shoes that cost $ %s dollars.' %(self.clothes))
         time.sleep(2)
-        print("As you come across a shallow pond, you notice splashing. Looking around, you see that %s children are drowning!" %(self.children))
+        print(("As you come across a shallow pond, you notice splashing. Looking around, you see that %s" %(self.children)) + (" children are" if self.children != 1 else " child is")+ "drowning!")
         time.sleep(2)
-        print("Nobody else is around. The pond is shallow so you're at no physical risk, but jumping in to save them will completely ruin your very expensive clothes.")
+        print("Nobody else is around. The pond is shallow so you're at no physical risk, but jumping in to save" + (" them " if self.children != 1 else " it ")+ "will completely ruin your very expensive clothes.")
         print('')
         time.sleep(3)
         
     
     def print_decision(self, move):
         if move:
-            print("You jump in to rescue the children, pulling them out one by one.")
+            print("You jump in to rescue the" + (" children, pulling them out one by one." if self.children != 1 else " child, pulling it out."))
             print("You rescue all of them!")
             time.sleep(2)
             print("You completely ruin your shoes in doing so, but you consider your sacrifice well worth it.")
@@ -453,7 +453,7 @@ class DrowningChild(Dilemma):
         
     def update_scores(self, move):
         if move and self.children >= 1:
-            print("You rushed in and saved %s children's lives, at great personal sacrifice." %(self.children))
+            print(("You rushed in and saved %s " %(self.children))+ ("children's lives" if self.children != 1 else "child's life")+ ", at great personal sacrifice." )
             if random.randint(1, 5) <= 1:
                 self.that_childs_name()
             print("Gain %s utils!" %(self.children))
